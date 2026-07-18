@@ -17,12 +17,20 @@ class MediaKind(StrEnum):
 
 
 class MatchType(StrEnum):
-    """How an item was linked to a watch-source entry."""
+    """How an item was linked to a watch-source entry.
 
-    GUID = "guid"  # imdb:// or tvdb:// (most reliable)
+    Declared from the most reliable to the least: `more_reliable_than` reads that
+    order, so a new member only has to be inserted at the right place.
+    """
+
+    GUID = "guid"  # imdb:// or tvdb://
     PATH = "path"  # file path (movies only)
     TITLE_YEAR = "title_year"
     NONE = "none"
+
+    def more_reliable_than(self, other: MatchType) -> bool:
+        order = list(type(self))
+        return order.index(self) < order.index(other)
 
 
 @dataclass(frozen=True)

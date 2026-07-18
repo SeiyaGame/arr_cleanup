@@ -17,9 +17,6 @@ from .sources import REGISTRY, ProgressCb, SourceContext, WatchIndex
 from .sources.base import normalize_path, normalize_title  # noqa: F401  (re-exported)
 from .sources.plex import PlexCatalog, PlexSource, build_catalog
 
-# Higher = more reliable.
-_RANK = {MatchType.NONE: 0, MatchType.TITLE_YEAR: 1, MatchType.PATH: 2, MatchType.GUID: 3}
-
 
 class WatchResolver:
     """Merge what every source knows about an item."""
@@ -41,7 +38,7 @@ class WatchResolver:
             if info.last_played and (last is None or info.last_played > last):
                 last = info.last_played
             matched.append(index.source)
-            if _RANK[match_type] > _RANK[best]:
+            if match_type.more_reliable_than(best):
                 best = match_type
 
         if not matched:
