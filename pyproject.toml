@@ -2,6 +2,8 @@
 name = "arr-cleanup"
 version = "3.0.0"
 description = "Finds and deletes never-watched movies/series (Radarr/Sonarr cross-referenced with Tautulli)."
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = ["requests", "typer", "click", "rich", "questionary"]
 
