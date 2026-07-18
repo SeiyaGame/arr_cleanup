@@ -3,7 +3,7 @@ name = "arr-cleanup"
 version = "3.0.0"
 description = "Finds and deletes never-watched movies/series (Radarr/Sonarr cross-referenced with Tautulli)."
 requires-python = ">=3.12"
-dependencies = ["requests", "typer", "rich", "questionary"]
+dependencies = ["requests", "typer", "click", "rich", "questionary"]
 
 [tool.ruff]
 line-length = 150

@@ -35,6 +35,12 @@ token = "CHANGE_ME"  # X-Plex-Token
 url = "http://tautulli.local:8181"
 api_key = "CHANGE_ME"
 
+# --- filters ---
+# Filter criteria are not configured here: they live on the command line.
+#   cleanup.py filters                      list the filters and their options
+#   cleanup.py radarr --set age.days=90     override one for a run
+#   cleanup.py radarr --set saga.enabled=false
+
 [cache]
 # API reads are cached on disk, so repeated runs stop hammering the APIs.
 # --refresh ignores it, --no-cache disables it, `cleanup.py cache-clear` empties it.

@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 from arr_cleanup.engine import CleanupEngine, EvaluationContext
+from arr_cleanup.filters import build_config
 from arr_cleanup.filters.base import ExclusionCategory, FilterConfig
 from arr_cleanup.filters.rating import RatingFilter
 from arr_cleanup.filters.saga import SagaFilter
@@ -75,7 +76,7 @@ def test_saga_filter_inert_on_series():
 
 
 def test_rating_filter_threshold():
-    cfg = FilterConfig(protect_above_rating=7.5)
+    cfg = build_config(["rating.min=7.5"])
     ctx = ctx_with({}, cfg)
     f = RatingFilter(cfg)
     assert f.enabled()
@@ -89,7 +90,7 @@ def test_rating_filter_disabled_without_option():
 
 
 def test_engine_end_to_end_movies():
-    cfg = FilterConfig(days=365, protect_above_rating=7.5)
+    cfg = build_config(["age.days=365", "rating.min=7.5"])
     old = datetime.now(UTC) - timedelta(days=800)
     items = [
         make_item(1, added=old),  # never watched, no saga -> candidate
@@ -107,7 +108,7 @@ def test_engine_end_to_end_movies():
 
 
 def test_engine_series_never_watched_is_candidate():
-    cfg = FilterConfig(days=0)
+    cfg = build_config(["age.days=0"])
     old = datetime.now(UTC) - timedelta(days=100)
     items = [
         make_item(1, kind=MediaKind.SERIES, added=old),  # 0 plays -> candidate

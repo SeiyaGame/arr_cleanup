@@ -20,7 +20,7 @@ from .cache import HttpCache
 from .config import ArrInstance, Settings, load_settings
 from .deletion import Deleter
 from .engine import CleanupEngine, CleanupResult
-from .filters.base import FilterConfig
+from .filters import REGISTRY, FilterConfig, build_config
 from .matching import active_source_names, build_resolver
 from .providers.base import ArrProvider
 from .providers.radarr import RadarrProvider
@@ -40,8 +40,9 @@ def _main() -> None:
 
 
 # --------- shared options (same for radarr and sonarr) ---------
-_DAYS = typer.Option(730, help="Minimum age in days (0 = filter disabled).")
-_RATING = typer.Option(None, help="Preserve never-watched items rated >= N (IMDb/TMDb, /10).")
+# No per-filter flag here: filter criteria go through --set, so adding a filter
+# never touches this file. Their defaults live in each filter's `params`.
+_SET = typer.Option(None, "--set", "-s", metavar="FILTER.OPTION=VALUE", help="Override any filter option, e.g. --set age.days=365 (repeatable). See the `filters` command.")  # noqa: E501  # fmt: skip
 _CSV = typer.Option(None, "--csv", help="Export the candidates to CSV.")
 _DELETE = typer.Option(False, help="Enable interactive deletion.")
 _INCLUDE = typer.Option(False, help="Also include items no watch source could match in the deletion.")
@@ -57,8 +58,7 @@ _NO_CACHE = typer.Option(False, help="Disable the API read cache for this run.")
 
 @app.command()
 def radarr(
-    days: int = _DAYS,
-    protect_above_rating: float | None = _RATING,
+    set_: list[str] | None = _SET,
     csv_path: Path | None = _CSV,
     delete: bool = _DELETE,
     include_unmatched: bool = _INCLUDE,
@@ -78,7 +78,7 @@ def radarr(
     _run(
         [RadarrProvider(inst, cache) for inst in settings.select("radarr", tuple(instance or ()), tuple(exclude or ()))],
         settings,
-        FilterConfig(days=days, protect_above_rating=protect_above_rating),
+        build_config(set_),
         cache,
         csv_path,
         delete,
@@ -91,8 +91,7 @@ def radarr(
 
 @app.command()
 def sonarr(
-    days: int = _DAYS,
-    protect_above_rating: float | None = _RATING,
+    set_: list[str] | None = _SET,
     csv_path: Path | None = _CSV,
     delete: bool = _DELETE,
     include_unmatched: bool = _INCLUDE,
@@ -112,7 +111,7 @@ def sonarr(
     _run(
         [SonarrProvider(inst, cache) for inst in settings.select("sonarr", tuple(instance or ()), tuple(exclude or ()))],
         settings,
-        FilterConfig(days=days, protect_above_rating=protect_above_rating),
+        build_config(set_),
         cache,
         csv_path,
         delete,
@@ -142,6 +141,20 @@ def cache_clear() -> None:
     settings = load_settings()
     removed = _build_cache(settings, refresh=False, no_cache=False).clear()
     console.print(f"[green]Cache cleared: {removed} entrie(s) removed.[/green]")
+
+
+@app.command("filters")
+def list_filters() -> None:
+    """List the filters and their options, with the default each one falls back to."""
+    config = build_config()
+    for cls in sorted(REGISTRY, key=lambda c: c.order):
+        state = "" if cls(config).enabled() else "  [dim](disabled)[/dim]"
+        console.print(f"[bold cyan]{cls.key}[/bold cyan] [dim]order={cls.order}[/dim]{state}")
+        for param in cls.all_params():
+            value = config.get(cls.key, param.name, param.default)
+            shown = "(unset)" if value is None else value
+            console.print(f"  {param.name} = [green]{shown}[/green]  [dim]{param.help}[/dim]")
+    console.print("\n[dim]Override with --set <filter>.<option>=<value>.[/dim]")
 
 
 def _disabled_sources(no_plex: bool, no_tautulli: bool) -> tuple[str, ...]:
@@ -182,7 +195,7 @@ def _run(
         console.print(f"[cyan]→ Fetching {provider.noun_plural} ({provider.label})...[/cyan]")
 
         result = CleanupEngine(resolver, config).run(provider.get_items())
-        ui.render_results(result, config.days, provider.noun_plural, sources, console, debug=debug)
+        ui.render_results(result, provider.noun_plural, sources, console, debug=debug)
         rows.append((provider.label, result))
 
         if delete:

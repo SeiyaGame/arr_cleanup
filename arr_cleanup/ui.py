@@ -17,7 +17,6 @@ def format_rating(rating: float | None) -> str:
 
 def render_results(
     result: CleanupResult,
-    days: int,
     noun_plural: str,
     sources: list[str],
     console: Console,
@@ -28,15 +27,18 @@ def render_results(
     label = noun_plural.capitalize()
 
     lines = [f"[dim]Watch sources: {', '.join(sources) or 'none'}[/dim]"]
-    if days > 0:
-        lines.append(f"{label} never watched, added more than {days} days ago: " f"[bold]{len(candidates)}[/bold]")
-    else:
-        lines.append(f"{label} never watched (no age filter): " f"[bold]{len(candidates)}[/bold]")
+    lines.append(f"{label} never watched: [bold]{len(candidates)}[/bold]")
     lines.append(f"Total reclaimable disk space: [bold]{total_gb} GB[/bold]")
 
+    # Rendered from the categories alone: no filter is named here, so a new one
+    # shows up on its own. `cleanup.py filters` gives the thresholds in effect.
     for reason, count in result.exclusions.items():
-        if result.exclusion_categories.get(reason) == ExclusionCategory.PROTECTED:
-            lines.append(f"[green]+ {count} preserved: " f"{result.exclusion_labels[reason]}[/green]")
+        category = result.exclusion_categories.get(reason)
+        label_text = result.exclusion_labels[reason]
+        if category == ExclusionCategory.PROTECTED:
+            lines.append(f"[green]+ {count} preserved: {label_text}[/green]")
+        elif category == ExclusionCategory.INELIGIBLE:
+            lines.append(f"[dim]- {count} excluded: {label_text}[/dim]")
 
     if result.unmatched:
         lines.append(

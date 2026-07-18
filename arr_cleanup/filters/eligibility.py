@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from ..models import MediaItem
-from .base import Exclusion, ExclusionCategory, Filter, register
+from .base import Exclusion, ExclusionCategory, Filter, Param, register
 
 if TYPE_CHECKING:
     from ..engine import EvaluationContext
@@ -27,11 +27,13 @@ class HasFileFilter(Filter):
 class AgeFilter(Filter):
     key = "age"
     order = 20
+    params = (Param("days", 730, "Minimum age in days (0 = no age filter).", int),)
 
     def prepare(self, items, ctx) -> None:
+        days = self.param("days")
         self._cutoff: datetime | None = None
-        if self.config.days > 0:
-            self._cutoff = datetime.now(UTC) - timedelta(days=self.config.days)
+        if days > 0:
+            self._cutoff = datetime.now(UTC) - timedelta(days=days)
 
     def evaluate(self, item: MediaItem, ctx: EvaluationContext) -> Exclusion | None:
         if item.added is None:
