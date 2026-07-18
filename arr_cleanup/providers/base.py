@@ -1,4 +1,10 @@
-"""Common interface for the *arr providers (Radarr, Sonarr, ...)."""
+"""Common interface for the *arr providers (Radarr, Sonarr, ...).
+
+Adding one = create a module in this package with a class inheriting from
+`ArrProvider` decorated with `@register`. The module is picked up automatically
+(see `__init__.py`), and `name` becomes the config.toml section, the CLI
+subcommand and the `--instance` scope, with nothing to declare elsewhere.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +18,8 @@ from ..models import MediaItem
 class ArrProvider(ABC):
     """Adapts one *arr instance: fetches typed items and knows how to delete them."""
 
-    name: str = ""  # "radarr" / "sonarr"
+    name: str = ""  # "radarr" / "sonarr": config section, CLI subcommand
+    description: str = ""  # one-line help for the CLI subcommand
     noun: str = "media"  # singular label for messages
     noun_plural: str = "media"  # plural label
     section_type: str = ""  # "movie" / "show" — same vocabulary in Plex and Tautulli
@@ -31,3 +38,20 @@ class ArrProvider(ABC):
 
     @abstractmethod
     def delete(self, item: MediaItem, delete_files: bool, add_exclusion: bool) -> None: ...
+
+
+REGISTRY: list[type[ArrProvider]] = []
+
+
+def register(cls: type[ArrProvider]) -> type[ArrProvider]:
+    """Decorator: register an *arr provider.
+
+    `name` keys the config.toml section and the CLI subcommand, so a missing or
+    duplicated one would silently shadow another *arr's instances.
+    """
+    if not cls.name:
+        raise ValueError(f"Provider {cls.__name__} must define a non-empty `name`.")
+    if clash := next((c for c in REGISTRY if c.name == cls.name), None):
+        raise ValueError(f"Provider name '{cls.name}' is already used by {clash.__name__}.")
+    REGISTRY.append(cls)
+    return cls

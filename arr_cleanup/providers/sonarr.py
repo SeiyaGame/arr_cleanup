@@ -6,12 +6,14 @@ from ..cache import HttpCache
 from ..clients.sonarr import SonarrClient
 from ..config import ArrInstance
 from ..models import MediaItem, MediaKind
-from .base import ArrProvider
+from .base import ArrProvider, register
 from .parsing import parse_dt, rating_value
 
 
+@register
 class SonarrProvider(ArrProvider):
     name = "sonarr"
+    description = "Never-watched Sonarr series (no episode watched)."
     noun = "series"
     noun_plural = "series"
     section_type = "show"

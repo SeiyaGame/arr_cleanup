@@ -16,9 +16,8 @@ from .cache import HttpCache
 from .config import ArrInstance, Settings, load_settings
 from .filters import REGISTRY, build_config
 from .matching import active_source_names, source_names, validate_source_names
-from .providers.base import ArrProvider
-from .providers.radarr import RadarrProvider
-from .providers.sonarr import SonarrProvider
+from .providers import REGISTRY as PROVIDERS
+from .providers import ArrProvider, provider_names
 from .session import CleanupSession, RunOptions
 
 app = typer.Typer(
@@ -50,12 +49,13 @@ _REFRESH = typer.Option(False, help="Ignore the cached API reads and refetch eve
 _NO_CACHE = typer.Option(False, help="Disable the API read cache for this run.")
 
 
-def _cleanup_command(arr: str, provider_cls: type[ArrProvider]):
-    """Build the radarr/sonarr command: same options, only the *arr differs.
+def _cleanup_command(provider_cls: type[ArrProvider]):
+    """Build one *arr subcommand: same options, only the provider differs.
 
-    Typer reads the options off the signature, so writing it in a closure lets the
-    two commands share one definition instead of duplicating eleven parameters.
+    Typer reads the options off the signature, so writing it in a closure lets
+    every *arr share one definition instead of duplicating eleven parameters.
     """
+    arr = provider_cls.name
 
     def command(
         set_: list[str] | None = _SET,
@@ -71,7 +71,7 @@ def _cleanup_command(arr: str, provider_cls: type[ArrProvider]):
         no_cache: bool = _NO_CACHE,
     ) -> None:
         settings = load_settings()
-        getattr(settings, f"require_{arr}")()
+        settings.require(arr)
         cache = _build_cache(settings, refresh=refresh or delete, no_cache=no_cache)
         session = CleanupSession(
             settings=settings,
@@ -92,15 +92,16 @@ def _cleanup_command(arr: str, provider_cls: type[ArrProvider]):
     return command
 
 
-app.command("radarr", help="Never-watched Radarr movies.")(_cleanup_command("radarr", RadarrProvider))
-app.command("sonarr", help="Never-watched Sonarr series (no episode watched).")(_cleanup_command("sonarr", SonarrProvider))
+# One subcommand per registered *arr: a new provider gets its command for free.
+for _provider in PROVIDERS:
+    app.command(_provider.name, help=_provider.description)(_cleanup_command(_provider))
 
 
 @app.command("instances")
 def list_instances() -> None:
-    """List the configured Radarr/Sonarr instances."""
+    """List the configured *arr instances."""
     settings = load_settings()
-    for arr in ("radarr", "sonarr"):
+    for arr in provider_names():
         console.print(f"[bold]{arr}[/bold]")
         found: tuple[ArrInstance, ...] = settings.instances(arr)
         if not found:

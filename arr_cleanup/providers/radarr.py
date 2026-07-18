@@ -6,12 +6,14 @@ from ..cache import HttpCache
 from ..clients.radarr import RadarrClient
 from ..config import ArrInstance
 from ..models import MediaItem, MediaKind
-from .base import ArrProvider
+from .base import ArrProvider, register
 from .parsing import collection_key, parse_dt, rating_value
 
 
+@register
 class RadarrProvider(ArrProvider):
     name = "radarr"
+    description = "Never-watched Radarr movies."
     noun = "movie"
     noun_plural = "movies"
     section_type = "movie"

@@ -27,8 +27,9 @@ class Settings:
     tautulli_api_key: str = ""
     plex_url: str = ""
     plex_token: str = ""
-    radarr: tuple[ArrInstance, ...] = ()
-    sonarr: tuple[ArrInstance, ...] = ()
+    # *arr name -> its configured instances. Keyed by the provider registry, so
+    # this module never has to name radarr or sonarr.
+    arrs: dict[str, tuple[ArrInstance, ...]] = field(default_factory=dict)
     imdb_fetch_workers: int = 16
     guid_cache_file: Path = field(default_factory=lambda: DEFAULT_CACHE)
     # API read cache: short-lived, so repeated runs stop hammering the APIs.
@@ -43,21 +44,16 @@ class Settings:
                 "No watch source configured: fill in the [plex] section (url + token) " "and/or [tautulli] (url + api_key) in config.toml."
             )
 
-    def require_radarr(self) -> None:
+    def require(self, arr: str) -> None:
+        """Refuse to run without a watch source and at least one usable instance."""
         self.require_watch_source()
-        _require_instances("radarr", self.radarr)
-
-    def require_sonarr(self) -> None:
-        self.require_watch_source()
-        _require_instances("sonarr", self.sonarr)
+        _require_instances(arr, self.instances(arr))
 
     def instances(self, arr: str) -> tuple[ArrInstance, ...]:
         """Configured instances of an *arr. Unknown names raise, never fall back."""
-        if arr == "radarr":
-            return self.radarr
-        if arr == "sonarr":
-            return self.sonarr
-        raise ValueError(f"Unknown *arr '{arr}'; expected 'radarr' or 'sonarr'.")
+        if arr not in self.arrs:
+            raise ValueError(f"Unknown *arr '{arr}'; expected one of {', '.join(self.arrs) or '(none)'}.")
+        return self.arrs[arr]
 
     def select(self, arr: str, names: Sequence[str] | None = None, exclude: Sequence[str] | None = None) -> list[ArrInstance]:
         """Instances of an *arr: `names` selects (empty = all), `exclude` removes."""
@@ -107,6 +103,10 @@ def _instances(arr: str, data: dict) -> tuple[ArrInstance, ...]:
 
 def load_settings(config_path: Path | None = None) -> Settings:
     """Read config.toml if present (without validating it)."""
+    # Imported here, not at module level: providers/base.py needs ArrInstance from
+    # this module, so a top-level import would close the cycle.
+    from .providers import provider_names
+
     data: dict = {}
     path = config_path or _ROOT / "config.toml"
     if path.exists():
@@ -125,8 +125,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         tautulli_api_key=str(tautulli.get("api_key") or ""),
         plex_url=str(plex.get("url") or "").rstrip("/"),
         plex_token=str(plex.get("token") or ""),
-        radarr=_instances("radarr", data),
-        sonarr=_instances("sonarr", data),
+        arrs={name: _instances(name, data) for name in provider_names()},
         imdb_fetch_workers=int(imdb.get("fetch_workers", 16)),
         guid_cache_file=Path(guid_cache) if guid_cache else DEFAULT_CACHE,
         cache_enabled=bool(cache.get("enabled", True)),
