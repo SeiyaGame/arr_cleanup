@@ -19,8 +19,6 @@ def make_item(iid, **kw):
         added=datetime(2019, 1, 1, tzinfo=UTC),
         has_file=True,
         rating=None,
-        tags=(),
-        monitored=True,
         collection_key=None,
         match_guids=(),
     )

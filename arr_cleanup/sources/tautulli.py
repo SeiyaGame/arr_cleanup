@@ -30,7 +30,7 @@ class TautulliSource(WatchSource):
         client = TautulliClient(ctx.settings, ctx.cache)
         section_ids = client.resolve_section_ids(ctx.section_type)
 
-        index = WatchIndex(source=self.name)
+        index = WatchIndex()
         by_ratingkey: dict[str, WatchInfo] = {}
 
         rows = (row for section_id in section_ids for row in client.iter_media_info(section_id))
@@ -40,7 +40,6 @@ class TautulliSource(WatchSource):
             info = WatchInfo(
                 play_count=row.get("play_count") or 0,
                 last_played=row.get("last_played"),
-                sources=(self.name,),
             )
             rating_key = row.get("rating_key")
             if rating_key is not None:

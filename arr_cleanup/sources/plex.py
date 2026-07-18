@@ -83,7 +83,7 @@ def aggregate_plays(rows: list[dict]) -> dict[str, WatchInfo]:
         viewed_at = row.get("viewedAt")
         info = plays.get(key)
         if info is None:
-            plays[key] = WatchInfo(play_count=1, last_played=viewed_at, sources=("plex",))
+            plays[key] = WatchInfo(play_count=1, last_played=viewed_at)
         else:
             info.play_count += 1
             if viewed_at and (info.last_played is None or viewed_at > info.last_played):
@@ -111,8 +111,8 @@ class PlexSource(WatchSource):
         # The index is built from the *catalog*, not from the history: an item present in
         # Plex with no play is a confirmed "never watched", which is not the same thing as
         # an item no source could identify (that one stays out of the deletion by default).
-        index = WatchIndex(source=self.name)
+        index = WatchIndex()
         for rating_key, entry in catalog.entries.items():
-            info = plays.get(rating_key) or WatchInfo(play_count=0, sources=(self.name,))
+            info = plays.get(rating_key) or WatchInfo(play_count=0)
             index.add(info, guids=entry.guids, title=entry.title, year=entry.year)
         return index

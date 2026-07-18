@@ -52,8 +52,6 @@ class MediaItem:
     added: datetime | None
     has_file: bool
     rating: float | None
-    tags: tuple[int, ...]
-    monitored: bool
     collection_key: str | int | None = None
     # Normalized guids in preference order for watch-source matching,
     # e.g. movie ("imdb://tt123",) ; series ("tvdb://456", "imdb://tt789").
@@ -70,9 +68,6 @@ class WatchInfo:
 
     play_count: int
     last_played: int | None = None
-    title: str | None = None
-    year: int | None = None
-    sources: tuple[str, ...] = ()  # e.g. ("plex", "tautulli")
 
 
 @dataclass

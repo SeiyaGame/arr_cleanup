@@ -41,7 +41,6 @@ def title_year_key(title: str, year) -> tuple[str, str]:
 class WatchIndex:
     """One source's lookup tables, in decreasing order of reliability."""
 
-    source: str
     by_guid: dict[str, WatchInfo] = field(default_factory=dict)
     by_path: dict[str, WatchInfo] = field(default_factory=dict)
     by_title_year: dict[tuple[str, str], WatchInfo] = field(default_factory=dict)

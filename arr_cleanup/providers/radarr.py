@@ -44,8 +44,6 @@ class RadarrProvider(ArrProvider):
             added=parse_dt(raw.get("added")),
             has_file=bool(raw.get("hasFile")),
             rating=rating_value(raw),
-            tags=tuple(raw.get("tags") or ()),
-            monitored=bool(raw.get("monitored")),
             collection_key=collection_key(raw),
             match_guids=guids,
         )

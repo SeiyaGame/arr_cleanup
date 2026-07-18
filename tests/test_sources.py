@@ -41,7 +41,6 @@ def test_aggregate_counts_plays_and_keeps_the_latest_date():
     # Two different episodes of the same series count as two plays of that series.
     assert plays["7"].play_count == 2
     assert plays["7"].last_played == 500
-    assert plays["7"].sources == ("plex",)
 
 
 def test_guids_are_normalized_from_the_plex_shape():
@@ -51,7 +50,7 @@ def test_guids_are_normalized_from_the_plex_shape():
 
 def test_index_collision_keeps_the_highest_play_count():
     """Same movie in the HD and the 4k section: only the watched entry matters."""
-    index = WatchIndex(source="plex")
+    index = WatchIndex()
     index.add(WatchInfo(play_count=0), guids=("imdb://tt1",))
     index.add(WatchInfo(play_count=2), guids=("imdb://tt1",))
     index.add(WatchInfo(play_count=1), guids=("imdb://tt1",))

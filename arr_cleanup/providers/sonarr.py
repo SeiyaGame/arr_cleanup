@@ -48,8 +48,6 @@ class SonarrProvider(ArrProvider):
             added=parse_dt(raw.get("added")),
             has_file=(stats.get("episodeFileCount") or 0) > 0,
             rating=rating_value(raw),
-            tags=tuple(raw.get("tags") or ()),
-            monitored=bool(raw.get("monitored")),
             collection_key=None,
             match_guids=tuple(guids),
         )

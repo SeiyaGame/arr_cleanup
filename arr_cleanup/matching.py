@@ -14,7 +14,6 @@ from .clients.plex import PlexClient
 from .config import Settings
 from .models import MatchType, MediaItem, SectionType, WatchInfo
 from .sources import REGISTRY, ProgressCb, SourceContext, WatchIndex
-from .sources.base import normalize_path, normalize_title  # noqa: F401  (re-exported)
 from .sources.plex import PlexCatalog, PlexSource, build_catalog
 
 
@@ -27,7 +26,7 @@ class WatchResolver:
     def resolve(self, item: MediaItem) -> tuple[WatchInfo | None, MatchType]:
         total = 0
         last: int | None = None
-        matched: list[str] = []
+        found = False
         best = MatchType.NONE
 
         for index in self._indexes:
@@ -37,13 +36,13 @@ class WatchResolver:
             total += info.play_count
             if info.last_played and (last is None or info.last_played > last):
                 last = info.last_played
-            matched.append(index.source)
+            found = True
             if match_type.more_reliable_than(best):
                 best = match_type
 
-        if not matched:
+        if not found:
             return None, MatchType.NONE
-        return WatchInfo(play_count=total, last_played=last, sources=tuple(matched)), best
+        return WatchInfo(play_count=total, last_played=last), best
 
 
 def build_resolver(

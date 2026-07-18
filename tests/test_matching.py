@@ -15,8 +15,6 @@ def item(**kw):
         added=datetime(2019, 1, 1, tzinfo=UTC),
         has_file=True,
         rating=None,
-        tags=(),
-        monitored=True,
         collection_key=None,
         match_guids=(),
     )
@@ -24,8 +22,8 @@ def item(**kw):
     return MediaItem(**base)
 
 
-def index(source="tautulli", **kw):
-    return WatchIndex(source=source, **kw)
+def index(**kw):
+    return WatchIndex(**kw)
 
 
 def resolver(*indexes):
@@ -62,21 +60,20 @@ def test_sources_are_merged_as_a_union():
     """Plex saw a pre-Tautulli play, Tautulli did not: the item is watched."""
     movie = item(match_guids=("imdb://tt9",))
     r = resolver(
-        index("plex", by_guid={"imdb://tt9": WatchInfo(play_count=3, last_played=200, sources=("plex",))}),
-        index("tautulli", by_guid={"imdb://tt9": WatchInfo(play_count=0, last_played=None, sources=("tautulli",))}),
+        index(by_guid={"imdb://tt9": WatchInfo(play_count=3, last_played=200)}),
+        index(by_guid={"imdb://tt9": WatchInfo(play_count=0, last_played=None)}),
     )
     info, mt = r.resolve(movie)
     assert mt == MatchType.GUID
     assert info.play_count == 3
     assert info.last_played == 200
-    assert info.sources == ("plex", "tautulli")
 
 
 def test_best_match_type_wins_across_sources():
     movie = item(title="Heat", year=1995, path="/m/heat.mkv", match_guids=("imdb://tt5",))
     r = resolver(
-        index("plex", by_title_year={("heat", "1995"): WatchInfo(play_count=0)}),
-        index("tautulli", by_guid={"imdb://tt5": WatchInfo(play_count=1)}),
+        index(by_title_year={("heat", "1995"): WatchInfo(play_count=0)}),
+        index(by_guid={"imdb://tt5": WatchInfo(play_count=1)}),
     )
     info, mt = r.resolve(movie)
     assert mt == MatchType.GUID  # guid beats title+year
@@ -86,7 +83,7 @@ def test_best_match_type_wins_across_sources():
 def test_matched_but_never_watched_is_not_unmatched():
     """A zero-play entry still identifies the item: that is a confirmed 'never watched'."""
     movie = item(match_guids=("imdb://tt9",))
-    r = resolver(index("plex", by_guid={"imdb://tt9": WatchInfo(play_count=0)}))
+    r = resolver(index(by_guid={"imdb://tt9": WatchInfo(play_count=0)}))
     info, mt = r.resolve(movie)
     assert mt == MatchType.GUID
     assert info.play_count == 0
