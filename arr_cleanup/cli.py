@@ -7,24 +7,19 @@ depends on the media type, so it is built once and shared by every instance.
 
 from __future__ import annotations
 
-import csv
 from pathlib import Path
 
 import typer
 from rich.console import Console
-from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
-from rich.rule import Rule
 
-from . import ui
 from .cache import HttpCache
 from .config import ArrInstance, Settings, load_settings
-from .deletion import Deleter
-from .engine import CleanupEngine, CleanupResult
-from .filters import REGISTRY, FilterConfig, build_config
-from .matching import active_source_names, build_resolver
+from .filters import REGISTRY, build_config
+from .matching import active_source_names, source_names, validate_source_names
 from .providers.base import ArrProvider
 from .providers.radarr import RadarrProvider
 from .providers.sonarr import SonarrProvider
+from .session import CleanupSession, RunOptions
 
 app = typer.Typer(
     add_completion=False,
@@ -48,78 +43,57 @@ _DELETE = typer.Option(False, help="Enable interactive deletion.")
 _INCLUDE = typer.Option(False, help="Also include items no watch source could match in the deletion.")
 _BLOCK = typer.Option(False, help="Add an import exclusion (no re-download).")
 _DEBUG = typer.Option(False, help="List the items no watch source could match.")
-_NO_PLEX = typer.Option(False, help="Ignore the Plex history (loses the pre-Tautulli watches).")
-_NO_TAUTULLI = typer.Option(False, help="Ignore the Tautulli stats.")
+_NO_SOURCE = typer.Option(None, "--no-source", metavar="NAME", help="Skip a watch source, e.g. --no-source plex (repeatable). See the `sources` command.")  # noqa: E501  # fmt: skip
 _INSTANCE = typer.Option(None, "--instance", "-i", help="Only this instance (repeatable). Default: every configured instance.")
 _EXCLUDE = typer.Option(None, "--exclude", "-x", help="Skip this instance (repeatable).")
 _REFRESH = typer.Option(False, help="Ignore the cached API reads and refetch everything.")
 _NO_CACHE = typer.Option(False, help="Disable the API read cache for this run.")
 
 
-@app.command()
-def radarr(
-    set_: list[str] | None = _SET,
-    csv_path: Path | None = _CSV,
-    delete: bool = _DELETE,
-    include_unmatched: bool = _INCLUDE,
-    block_redownload: bool = _BLOCK,
-    debug: bool = _DEBUG,
-    no_plex: bool = _NO_PLEX,
-    no_tautulli: bool = _NO_TAUTULLI,
-    instance: list[str] | None = _INSTANCE,
-    exclude: list[str] | None = _EXCLUDE,
-    refresh: bool = _REFRESH,
-    no_cache: bool = _NO_CACHE,
-) -> None:
-    """Never-watched Radarr movies."""
-    settings = load_settings()
-    settings.require_radarr()
-    cache = _build_cache(settings, refresh=refresh or delete, no_cache=no_cache)
-    _run(
-        [RadarrProvider(inst, cache) for inst in settings.select("radarr", tuple(instance or ()), tuple(exclude or ()))],
-        settings,
-        build_config(set_),
-        cache,
-        csv_path,
-        delete,
-        include_unmatched,
-        block_redownload,
-        debug,
-        _disabled_sources(no_plex, no_tautulli),
-    )
+def _cleanup_command(arr: str, provider_cls: type[ArrProvider]):
+    """Build the radarr/sonarr command: same options, only the *arr differs.
+
+    Typer reads the options off the signature, so writing it in a closure lets the
+    two commands share one definition instead of duplicating eleven parameters.
+    """
+
+    def command(
+        set_: list[str] | None = _SET,
+        csv_path: Path | None = _CSV,
+        delete: bool = _DELETE,
+        include_unmatched: bool = _INCLUDE,
+        block_redownload: bool = _BLOCK,
+        debug: bool = _DEBUG,
+        no_source: list[str] | None = _NO_SOURCE,
+        instance: list[str] | None = _INSTANCE,
+        exclude: list[str] | None = _EXCLUDE,
+        refresh: bool = _REFRESH,
+        no_cache: bool = _NO_CACHE,
+    ) -> None:
+        settings = load_settings()
+        getattr(settings, f"require_{arr}")()
+        cache = _build_cache(settings, refresh=refresh or delete, no_cache=no_cache)
+        session = CleanupSession(
+            settings=settings,
+            config=build_config(set_),
+            cache=cache,
+            console=console,
+            options=RunOptions(
+                csv_path=csv_path,
+                delete=delete,
+                include_unmatched=include_unmatched,
+                block_redownload=block_redownload,
+                debug=debug,
+                disabled_sources=validate_source_names(no_source),
+            ),
+        )
+        session.run([provider_cls(inst, cache) for inst in settings.select(arr, instance, exclude)])
+
+    return command
 
 
-@app.command()
-def sonarr(
-    set_: list[str] | None = _SET,
-    csv_path: Path | None = _CSV,
-    delete: bool = _DELETE,
-    include_unmatched: bool = _INCLUDE,
-    block_redownload: bool = _BLOCK,
-    debug: bool = _DEBUG,
-    no_plex: bool = _NO_PLEX,
-    no_tautulli: bool = _NO_TAUTULLI,
-    instance: list[str] | None = _INSTANCE,
-    exclude: list[str] | None = _EXCLUDE,
-    refresh: bool = _REFRESH,
-    no_cache: bool = _NO_CACHE,
-) -> None:
-    """Never-watched Sonarr series (no episode watched)."""
-    settings = load_settings()
-    settings.require_sonarr()
-    cache = _build_cache(settings, refresh=refresh or delete, no_cache=no_cache)
-    _run(
-        [SonarrProvider(inst, cache) for inst in settings.select("sonarr", tuple(instance or ()), tuple(exclude or ()))],
-        settings,
-        build_config(set_),
-        cache,
-        csv_path,
-        delete,
-        include_unmatched,
-        block_redownload,
-        debug,
-        _disabled_sources(no_plex, no_tautulli),
-    )
+app.command("radarr", help="Never-watched Radarr movies.")(_cleanup_command("radarr", RadarrProvider))
+app.command("sonarr", help="Never-watched Sonarr series (no episode watched).")(_cleanup_command("sonarr", SonarrProvider))
 
 
 @app.command("instances")
@@ -157,8 +131,15 @@ def list_filters() -> None:
     console.print("\n[dim]Override with --set <filter>.<option>=<value>.[/dim]")
 
 
-def _disabled_sources(no_plex: bool, no_tautulli: bool) -> tuple[str, ...]:
-    return tuple(name for name, off in (("plex", no_plex), ("tautulli", no_tautulli)) if off)
+@app.command("sources")
+def list_sources() -> None:
+    """List the watch sources and whether they are configured."""
+    settings = load_settings()
+    active = active_source_names(settings)
+    for name in source_names():
+        state = "[green]configured[/green]" if name in active else "[dim]not configured[/dim]"
+        console.print(f"[bold cyan]{name}[/bold cyan]  {state}")
+    console.print("\n[dim]Skip one for a run with --no-source <name>.[/dim]")
 
 
 def _build_cache(settings: Settings, refresh: bool, no_cache: bool) -> HttpCache:
@@ -169,93 +150,6 @@ def _build_cache(settings: Settings, refresh: bool, no_cache: bool) -> HttpCache
         enabled=settings.cache_enabled and not no_cache,
         refresh=refresh,
     )
-
-
-def _run(
-    providers: list[ArrProvider],
-    settings: Settings,
-    config: FilterConfig,
-    cache: HttpCache,
-    csv_path: Path | None,
-    delete: bool,
-    include_unmatched: bool,
-    block_redownload: bool,
-    debug: bool,
-    disabled_sources: tuple[str, ...] = (),
-) -> None:
-    sources = active_source_names(settings, disabled_sources)
-    console.print(f"[cyan]→ Indexing the watch history ({', '.join(sources) or 'none'})...[/cyan]")
-    # Shared by every instance: the index depends on the media type, not on the *arr.
-    resolver = _build_resolver_with_progress(settings, providers[0].section_type, cache, disabled_sources)
-
-    rows: list[tuple[str, CleanupResult]] = []
-    for provider in providers:
-        if len(providers) > 1:
-            console.print(Rule(f"[bold]{provider.name} · {provider.label}[/bold]"))
-        console.print(f"[cyan]→ Fetching {provider.noun_plural} ({provider.label})...[/cyan]")
-
-        result = CleanupEngine(resolver, config).run(provider.get_items())
-        ui.render_results(result, provider.noun_plural, sources, console, debug=debug)
-        rows.append((provider.label, result))
-
-        if delete:
-            Deleter(provider, console, cache).run(result.candidates, include_unmatched, block_redownload)
-
-    console.print(f"[dim]cache: {cache.mode} ({cache.hits} hit(s), {cache.misses} fetch(es))[/dim]")
-
-    if csv_path:
-        _export_csv(rows, csv_path)
-        console.print(f"[green]CSV export: {csv_path}[/green]")
-
-    if not delete and any(r.candidates for _, r in rows):
-        console.print("\n[dim](Stats mode. Add --delete to remove items, with interactive selection.)[/dim]")
-
-    if len(providers) > 1:
-        total = sum(len(r.candidates) for _, r in rows)
-        total_gb = round(sum(c.item.size_gb for _, r in rows for c in r.candidates), 2)
-        console.print(f"\n[bold]All instances[/bold]: {total} candidates | {total_gb} GB")
-
-
-def _build_resolver_with_progress(settings: Settings, section_type: str, cache: HttpCache, disabled_sources: tuple[str, ...]):
-    with Progress(
-        TextColumn("[cyan]Metadata[/cyan]"),
-        BarColumn(),
-        TextColumn("{task.completed}/{task.total}"),
-        TimeRemainingColumn(),
-        console=console,
-        transient=True,
-    ) as progress:
-        state: dict = {"task": None}
-
-        # Only the Tautulli fallback (Plex unconfigured) is slow enough to report progress.
-        def cb(done: int, total: int) -> None:
-            if state["task"] is None:
-                state["task"] = progress.add_task("meta", total=total)
-            progress.update(state["task"], completed=done)
-
-        return build_resolver(settings, section_type, cache, progress_cb=cb, disabled=disabled_sources)
-
-
-def _export_csv(rows: list[tuple[str, CleanupResult]], path: Path) -> None:
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["instance", "title", "year", "added", "size_gb", "rating", "path", "kind", "match_type"])
-        for label, result in rows:
-            for c in result.candidates:
-                it = c.item
-                writer.writerow(
-                    [
-                        label,
-                        it.title,
-                        it.year,
-                        it.added.date().isoformat() if it.added else "",
-                        it.size_gb,
-                        it.rating if it.rating is not None else "",
-                        it.path,
-                        str(it.kind),
-                        str(c.match_type),
-                    ]
-                )
 
 
 if __name__ == "__main__":

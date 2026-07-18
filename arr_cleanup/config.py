@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tomllib
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -53,8 +54,9 @@ class Settings:
     def instances(self, arr: str) -> tuple[ArrInstance, ...]:
         return self.radarr if arr == "radarr" else self.sonarr
 
-    def select(self, arr: str, names: tuple[str, ...] = (), exclude: tuple[str, ...] = ()) -> list[ArrInstance]:
+    def select(self, arr: str, names: Sequence[str] | None = None, exclude: Sequence[str] | None = None) -> list[ArrInstance]:
         """Instances of an *arr: `names` selects (empty = all), `exclude` removes."""
+        names, exclude = tuple(names or ()), tuple(exclude or ())
         available = self.instances(arr)
         by_name = {inst.name: inst for inst in available}
         self._reject_unknown(arr, by_name, names + exclude)
@@ -75,7 +77,7 @@ class Settings:
 def _require_instances(arr: str, instances: tuple[ArrInstance, ...]) -> None:
     if not instances:
         raise SystemExit(
-            f"No {arr} instance configured.\n" f"Add a [{arr}] section (or several [[{arr}]] blocks) to config.toml, " f"see config.example.toml."
+            f"No {arr} instance configured.\n" f"Add a [{arr}] section (or several [[{arr}]] blocks) to config.toml, see config.example.toml."
         )
     for inst in instances:
         missing = [k for k, v in (("url", inst.url), ("api_key", inst.api_key)) if not v]
