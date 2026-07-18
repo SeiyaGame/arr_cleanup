@@ -115,5 +115,9 @@ REGISTRY: list[type[WatchSource]] = []
 
 def register(cls: type[WatchSource]) -> type[WatchSource]:
     """Decorator: register a watch source."""
+    if not cls.name:
+        raise ValueError(f"Watch source {cls.__name__} must define a non-empty `name`.")
+    if clash := next((c for c in REGISTRY if c.name == cls.name), None):
+        raise ValueError(f"Watch source name '{cls.name}' is already used by {clash.__name__}.")
     REGISTRY.append(cls)
     return cls

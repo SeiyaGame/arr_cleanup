@@ -7,6 +7,8 @@ decreasing order of reliability: guid (imdb/tvdb) -> file path -> title+year.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from .cache import HttpCache
 from .clients.plex import PlexClient
 from .config import Settings
@@ -83,3 +85,17 @@ def _plex_catalog(settings: Settings, section_type: str, cache: HttpCache) -> Pl
 
 def active_source_names(settings: Settings, disabled: tuple[str, ...] = ()) -> list[str]:
     return [cls.name for cls in REGISTRY if cls.name not in disabled and cls.enabled(settings)]
+
+
+def source_names() -> list[str]:
+    """Every registered source name, whatever its configuration state."""
+    return [cls.name for cls in REGISTRY]
+
+
+def validate_source_names(names: Sequence[str] | None = None) -> tuple[str, ...]:
+    """Reject a --no-source typo instead of silently ignoring it."""
+    names = tuple(names or ())
+    known = source_names()
+    if unknown := [n for n in names if n not in known]:
+        raise SystemExit(f"Unknown watch source(s): {', '.join(unknown)}.\nAvailable: {', '.join(known) or '(none)'}.")
+    return names
