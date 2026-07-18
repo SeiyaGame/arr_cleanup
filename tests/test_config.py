@@ -60,6 +60,13 @@ def test_unnamed_instances_get_a_positional_name(tmp_path):
     assert [i.name for i in settings.sonarr] == ["sonarr-1", "sonarr-2"]
 
 
+def test_instances_rejects_an_unknown_arr(tmp_path):
+    """It used to return the sonarr instances for any name that was not 'radarr'."""
+    settings = write(tmp_path, MULTI)
+    with pytest.raises(ValueError, match="lidarr"):
+        settings.instances("lidarr")
+
+
 def test_select_filters_by_name(tmp_path):
     settings = write(tmp_path, MULTI)
     assert [i.name for i in settings.select("radarr")] == ["films", "anime"]  # all by default

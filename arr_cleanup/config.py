@@ -52,7 +52,12 @@ class Settings:
         _require_instances("sonarr", self.sonarr)
 
     def instances(self, arr: str) -> tuple[ArrInstance, ...]:
-        return self.radarr if arr == "radarr" else self.sonarr
+        """Configured instances of an *arr. Unknown names raise, never fall back."""
+        if arr == "radarr":
+            return self.radarr
+        if arr == "sonarr":
+            return self.sonarr
+        raise ValueError(f"Unknown *arr '{arr}'; expected 'radarr' or 'sonarr'.")
 
     def select(self, arr: str, names: Sequence[str] | None = None, exclude: Sequence[str] | None = None) -> list[ArrInstance]:
         """Instances of an *arr: `names` selects (empty = all), `exclude` removes."""
