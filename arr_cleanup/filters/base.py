@@ -57,6 +57,15 @@ class ExclusionCategory(Enum):
     WATCHED = auto()  # already watched
     PROTECTED = auto()  # never watched but protected (saga, rating...)
 
+    @property
+    def is_protection(self) -> bool:
+        """True when the item qualified for deletion and a filter saved it.
+
+        The other categories never made it that far, which is why the summary
+        reports them as excluded rather than preserved.
+        """
+        return self is ExclusionCategory.PROTECTED
+
 
 @dataclass(frozen=True)
 class Exclusion:

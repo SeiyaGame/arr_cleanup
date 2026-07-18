@@ -7,7 +7,6 @@ from rich.panel import Panel
 from rich.table import Table
 
 from .engine import CleanupResult
-from .filters.base import ExclusionCategory
 
 
 def format_rating(rating: float | None) -> str:
@@ -33,12 +32,9 @@ def render_results(
     # Rendered from the categories alone: no filter is named here, so a new one
     # shows up on its own. `cleanup.py filters` gives the thresholds in effect.
     for reason, count in result.exclusions.items():
-        category = result.exclusion_categories.get(reason)
-        label_text = result.exclusion_labels[reason]
-        if category == ExclusionCategory.PROTECTED:
-            lines.append(f"[green]+ {count} preserved: {label_text}[/green]")
-        elif category == ExclusionCategory.INELIGIBLE:
-            lines.append(f"[dim]- {count} excluded: {label_text}[/dim]")
+        protection = result.exclusion_categories[reason].is_protection
+        style, sign, verb = ("green", "+", "preserved") if protection else ("dim", "-", "excluded")
+        lines.append(f"[{style}]{sign} {count} {verb}: {result.exclusion_labels[reason]}[/{style}]")
 
     if result.unmatched:
         lines.append(
