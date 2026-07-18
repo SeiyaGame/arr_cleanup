@@ -11,11 +11,6 @@ from datetime import datetime
 from enum import StrEnum
 
 
-class MediaKind(StrEnum):
-    MOVIE = "movie"
-    SERIES = "series"
-
-
 class SectionType(StrEnum):
     """A Plex/Tautulli library type.
 
@@ -59,7 +54,6 @@ class MediaItem:
     rating: float | None
     tags: tuple[int, ...]
     monitored: bool
-    kind: MediaKind
     collection_key: str | int | None = None
     # Normalized guids in preference order for watch-source matching,
     # e.g. movie ("imdb://tt123",) ; series ("tvdb://456", "imdb://tt789").

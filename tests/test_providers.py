@@ -1,4 +1,3 @@
-from arr_cleanup.models import MediaKind
 from arr_cleanup.providers.radarr import RadarrProvider
 from arr_cleanup.providers.sonarr import SonarrProvider
 
@@ -20,7 +19,6 @@ def test_radarr_parse_full():
         "monitored": True,
     }
     m = RadarrProvider._parse(raw)
-    assert m.kind == MediaKind.MOVIE
     assert m.match_guids == ("imdb://tt1",)
     assert m.collection_key == 99
     assert m.rating == 7.7
@@ -52,7 +50,6 @@ def test_sonarr_parse_full():
         "statistics": {"sizeOnDisk": 2 * 1024**3, "episodeFileCount": 12},
     }
     s = SonarrProvider._parse(raw)
-    assert s.kind == MediaKind.SERIES
     # tvdb first, imdb as fallback
     assert s.match_guids == ("tvdb://78804", "imdb://tt0436992")
     assert s.collection_key is None  # series: never a saga

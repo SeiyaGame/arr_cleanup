@@ -5,7 +5,7 @@ from __future__ import annotations
 from ..cache import HttpCache
 from ..clients.radarr import RadarrClient
 from ..config import ArrInstance
-from ..models import MediaItem, MediaKind, SectionType
+from ..models import MediaItem, SectionType
 from .base import ArrProvider, register
 from .parsing import collection_key, parse_dt, rating_value
 
@@ -46,7 +46,6 @@ class RadarrProvider(ArrProvider):
             rating=rating_value(raw),
             tags=tuple(raw.get("tags") or ()),
             monitored=bool(raw.get("monitored")),
-            kind=MediaKind.MOVIE,
             collection_key=collection_key(raw),
             match_guids=guids,
         )

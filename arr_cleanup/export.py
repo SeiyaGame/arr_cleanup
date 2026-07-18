@@ -25,7 +25,6 @@ class _Row:
     size_gb: float
     rating: float | None
     path: str | None
-    kind: str
     match_type: str
 
     @classmethod
@@ -39,7 +38,6 @@ class _Row:
             size_gb=item.size_gb,
             rating=item.rating,
             path=item.path,
-            kind=str(item.kind),
             match_type=str(candidate.match_type),
         )
 

@@ -9,9 +9,7 @@ import pkgutil
 
 from .base import REGISTRY, ArrProvider, register
 
-# Import every module of the package so that their @register runs. Nothing to
-# exclude: a module holding no provider registers nothing, and base is already in
-# sys.modules by now, so importing it again is just a cache lookup.
+# Import every module of the package so that their @register runs.
 for _module in pkgutil.iter_modules(__path__):
     importlib.import_module(f"{__name__}.{_module.name}")
 

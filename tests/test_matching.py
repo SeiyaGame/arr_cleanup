@@ -1,11 +1,11 @@
 from datetime import UTC, datetime
 
 from arr_cleanup.matching import WatchResolver
-from arr_cleanup.models import MatchType, MediaItem, MediaKind, WatchInfo
+from arr_cleanup.models import MatchType, MediaItem, WatchInfo
 from arr_cleanup.sources.base import WatchIndex
 
 
-def item(kind, **kw):
+def item(**kw):
     base = dict(
         id=1,
         title="T",
@@ -17,7 +17,6 @@ def item(kind, **kw):
         rating=None,
         tags=(),
         monitored=True,
-        kind=kind,
         collection_key=None,
         match_guids=(),
     )
@@ -36,32 +35,32 @@ def resolver(*indexes):
 def test_series_matches_by_tvdb_guid():
     seen = WatchInfo(play_count=4)
     r = resolver(index(by_guid={"tvdb://78804": seen}))
-    info, mt = r.resolve(item(MediaKind.SERIES, match_guids=("tvdb://78804", "imdb://tt1")))
+    info, mt = r.resolve(item(match_guids=("tvdb://78804", "imdb://tt1")))
     assert mt == MatchType.GUID
     assert info.play_count == 4
 
 
 def test_movie_matches_by_imdb_guid():
     r = resolver(index(by_guid={"imdb://tt9": WatchInfo(play_count=1)}))
-    _, mt = r.resolve(item(MediaKind.MOVIE, match_guids=("imdb://tt9",)))
+    _, mt = r.resolve(item(match_guids=("imdb://tt9",)))
     assert mt == MatchType.GUID
 
 
 def test_falls_back_to_title_year_then_none():
     r = resolver(index(by_title_year={("doctorwho", "2005"): WatchInfo(play_count=2)}))
 
-    matched = item(MediaKind.SERIES, title="Doctor Who", year=2005, match_guids=("tvdb://999",))
+    matched = item(title="Doctor Who", year=2005, match_guids=("tvdb://999",))
     _, mt = r.resolve(matched)
     assert mt == MatchType.TITLE_YEAR
 
-    unknown = item(MediaKind.SERIES, title="Unknown", year=1990, match_guids=("tvdb://111",))
+    unknown = item(title="Unknown", year=1990, match_guids=("tvdb://111",))
     info, mt = r.resolve(unknown)
     assert info is None and mt == MatchType.NONE
 
 
 def test_sources_are_merged_as_a_union():
     """Plex saw a pre-Tautulli play, Tautulli did not: the item is watched."""
-    movie = item(MediaKind.MOVIE, match_guids=("imdb://tt9",))
+    movie = item(match_guids=("imdb://tt9",))
     r = resolver(
         index("plex", by_guid={"imdb://tt9": WatchInfo(play_count=3, last_played=200, sources=("plex",))}),
         index("tautulli", by_guid={"imdb://tt9": WatchInfo(play_count=0, last_played=None, sources=("tautulli",))}),
@@ -74,7 +73,7 @@ def test_sources_are_merged_as_a_union():
 
 
 def test_best_match_type_wins_across_sources():
-    movie = item(MediaKind.MOVIE, title="Heat", year=1995, path="/m/heat.mkv", match_guids=("imdb://tt5",))
+    movie = item(title="Heat", year=1995, path="/m/heat.mkv", match_guids=("imdb://tt5",))
     r = resolver(
         index("plex", by_title_year={("heat", "1995"): WatchInfo(play_count=0)}),
         index("tautulli", by_guid={"imdb://tt5": WatchInfo(play_count=1)}),
@@ -86,7 +85,7 @@ def test_best_match_type_wins_across_sources():
 
 def test_matched_but_never_watched_is_not_unmatched():
     """A zero-play entry still identifies the item: that is a confirmed 'never watched'."""
-    movie = item(MediaKind.MOVIE, match_guids=("imdb://tt9",))
+    movie = item(match_guids=("imdb://tt9",))
     r = resolver(index("plex", by_guid={"imdb://tt9": WatchInfo(play_count=0)}))
     info, mt = r.resolve(movie)
     assert mt == MatchType.GUID

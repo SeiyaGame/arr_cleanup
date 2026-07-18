@@ -35,7 +35,7 @@ def test_writes_one_row_per_candidate_across_instances(tmp_path):
 def test_header_is_derived_from_the_row_fields():
     """Adding a column to _Row must not require editing a separate header list."""
     assert HEADER[0] == "instance"
-    assert set(HEADER) == {"instance", "title", "year", "added", "size_gb", "rating", "path", "kind", "match_type"}
+    assert set(HEADER) == {"instance", "title", "year", "added", "size_gb", "rating", "path", "match_type"}
 
 
 def test_unknown_values_render_empty_not_zero(tmp_path):

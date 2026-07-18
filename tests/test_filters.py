@@ -6,10 +6,10 @@ from arr_cleanup.filters.base import ExclusionCategory, FilterConfig
 from arr_cleanup.filters.rating import RatingFilter
 from arr_cleanup.filters.saga import SagaFilter
 from arr_cleanup.filters.watched import WatchedFilter
-from arr_cleanup.models import MatchType, MediaItem, MediaKind, WatchInfo
+from arr_cleanup.models import MatchType, MediaItem, WatchInfo
 
 
-def make_item(iid, kind=MediaKind.MOVIE, **kw):
+def make_item(iid, **kw):
     base = dict(
         id=iid,
         title="T",
@@ -21,7 +21,6 @@ def make_item(iid, kind=MediaKind.MOVIE, **kw):
         rating=None,
         tags=(),
         monitored=True,
-        kind=kind,
         collection_key=None,
         match_guids=(),
     )
@@ -68,7 +67,7 @@ def test_saga_filter_protects_unseen_from_watched_saga():
 def test_saga_filter_inert_on_series():
     """A series (collection_key None) is never protected by the saga filter."""
     cfg = FilterConfig()
-    series = make_item(1, kind=MediaKind.SERIES, collection_key=None)
+    series = make_item(1, collection_key=None)
     ctx = ctx_with({}, cfg)
     f = SagaFilter(cfg)
     f.prepare([series], ctx)
@@ -111,8 +110,8 @@ def test_engine_series_never_watched_is_candidate():
     cfg = build_config(["age.days=0"])
     old = datetime.now(UTC) - timedelta(days=100)
     items = [
-        make_item(1, kind=MediaKind.SERIES, added=old),  # 0 plays -> candidate
-        make_item(2, kind=MediaKind.SERIES, added=old),  # watched -> excluded as watched
+        make_item(1, added=old),  # 0 plays -> candidate
+        make_item(2, added=old),  # watched -> excluded as watched
     ]
     result = CleanupEngine(FakeResolver({2: 5}), cfg).run(items)
     assert {c.item.id for c in result.candidates} == {1}
