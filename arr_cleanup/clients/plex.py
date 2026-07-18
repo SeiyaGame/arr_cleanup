@@ -35,9 +35,7 @@ class PlexClient:
 
     def accounts(self) -> dict[str, str]:
         """Return {accountID: name}."""
-        return {
-            str(a.get("id")): a.get("name") or f"(id {a.get('id')})" for a in self._get("/accounts").get("Account", [])
-        }
+        return {str(a.get("id")): a.get("name") or f"(id {a.get('id')})" for a in self._get("/accounts").get("Account", [])}
 
     def sections(self) -> list[dict]:
         return self._get("/library/sections").get("Directory", [])

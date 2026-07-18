@@ -57,9 +57,7 @@ class TautulliSource(WatchSource):
         return _fetch_guids(client, ctx.settings, list(by_ratingkey), ctx.progress_cb)
 
 
-def _fetch_guids(
-    client: TautulliClient, settings: Settings, rating_keys: list[str], progress_cb: ProgressCb | None
-) -> dict[str, tuple[str, ...]]:
+def _fetch_guids(client: TautulliClient, settings: Settings, rating_keys: list[str], progress_cb: ProgressCb | None) -> dict[str, tuple[str, ...]]:
     """Fallback when Plex is not configured: one get_metadata call per item, cached on disk."""
     cache_file = settings.guid_cache_file
     cache: dict = {}

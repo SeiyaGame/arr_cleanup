@@ -49,9 +49,7 @@ _BLOCK = typer.Option(False, help="Add an import exclusion (no re-download).")
 _DEBUG = typer.Option(False, help="List the items no watch source could match.")
 _NO_PLEX = typer.Option(False, help="Ignore the Plex history (loses the pre-Tautulli watches).")
 _NO_TAUTULLI = typer.Option(False, help="Ignore the Tautulli stats.")
-_INSTANCE = typer.Option(
-    None, "--instance", "-i", help="Only this instance (repeatable). Default: every configured instance."
-)
+_INSTANCE = typer.Option(None, "--instance", "-i", help="Only this instance (repeatable). Default: every configured instance.")
 _EXCLUDE = typer.Option(None, "--exclude", "-x", help="Skip this instance (repeatable).")
 _REFRESH = typer.Option(False, help="Ignore the cached API reads and refetch everything.")
 _NO_CACHE = typer.Option(False, help="Disable the API read cache for this run.")
@@ -78,10 +76,7 @@ def radarr(
     settings.require_radarr()
     cache = _build_cache(settings, refresh=refresh or delete, no_cache=no_cache)
     _run(
-        [
-            RadarrProvider(inst, cache)
-            for inst in settings.select("radarr", tuple(instance or ()), tuple(exclude or ()))
-        ],
+        [RadarrProvider(inst, cache) for inst in settings.select("radarr", tuple(instance or ()), tuple(exclude or ()))],
         settings,
         FilterConfig(days=days, protect_above_rating=protect_above_rating),
         cache,
@@ -115,10 +110,7 @@ def sonarr(
     settings.require_sonarr()
     cache = _build_cache(settings, refresh=refresh or delete, no_cache=no_cache)
     _run(
-        [
-            SonarrProvider(inst, cache)
-            for inst in settings.select("sonarr", tuple(instance or ()), tuple(exclude or ()))
-        ],
+        [SonarrProvider(inst, cache) for inst in settings.select("sonarr", tuple(instance or ()), tuple(exclude or ()))],
         settings,
         FilterConfig(days=days, protect_above_rating=protect_above_rating),
         cache,
@@ -211,9 +203,7 @@ def _run(
         console.print(f"\n[bold]All instances[/bold]: {total} candidates | {total_gb} GB")
 
 
-def _build_resolver_with_progress(
-    settings: Settings, section_type: str, cache: HttpCache, disabled_sources: tuple[str, ...]
-):
+def _build_resolver_with_progress(settings: Settings, section_type: str, cache: HttpCache, disabled_sources: tuple[str, ...]):
     with Progress(
         TextColumn("[cyan]Metadata[/cyan]"),
         BarColumn(),

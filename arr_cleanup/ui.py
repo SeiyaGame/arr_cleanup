@@ -40,8 +40,7 @@ def render_results(
 
     if result.unmatched:
         lines.append(
-            f"[yellow]including {len(result.unmatched)} no watch source could match "
-            f"(excluded from deletion by default — see --debug)[/yellow]"
+            f"[yellow]including {len(result.unmatched)} no watch source could match " f"(excluded from deletion by default — see --debug)[/yellow]"
         )
 
     console.print(Panel("\n".join(lines), title="Results", expand=False))

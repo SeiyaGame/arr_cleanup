@@ -39,8 +39,7 @@ class Settings:
         """At least one watch source is needed to tell watched from never-watched."""
         if not (self.plex_url and self.plex_token) and not (self.tautulli_url and self.tautulli_api_key):
             raise SystemExit(
-                "No watch source configured: fill in the [plex] section (url + token) "
-                "and/or [tautulli] (url + api_key) in config.toml."
+                "No watch source configured: fill in the [plex] section (url + token) " "and/or [tautulli] (url + api_key) in config.toml."
             )
 
     def require_radarr(self) -> None:
@@ -70,17 +69,13 @@ class Settings:
     def _reject_unknown(arr: str, by_name: dict[str, ArrInstance], names: tuple[str, ...]) -> None:
         unknown = [n for n in names if n not in by_name]
         if unknown:
-            raise SystemExit(
-                f"Unknown {arr} instance(s): {', '.join(unknown)}.\n" f"Configured: {', '.join(by_name) or '(none)'}."
-            )
+            raise SystemExit(f"Unknown {arr} instance(s): {', '.join(unknown)}.\n" f"Configured: {', '.join(by_name) or '(none)'}.")
 
 
 def _require_instances(arr: str, instances: tuple[ArrInstance, ...]) -> None:
     if not instances:
         raise SystemExit(
-            f"No {arr} instance configured.\n"
-            f"Add a [{arr}] section (or several [[{arr}]] blocks) to config.toml, "
-            f"see config.example.toml."
+            f"No {arr} instance configured.\n" f"Add a [{arr}] section (or several [[{arr}]] blocks) to config.toml, " f"see config.example.toml."
         )
     for inst in instances:
         missing = [k for k, v in (("url", inst.url), ("api_key", inst.api_key)) if not v]

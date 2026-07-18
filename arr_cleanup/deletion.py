@@ -89,9 +89,7 @@ class Deleter:
                 self._provider.delete(c.item, delete_files=True, add_exclusion=block_redownload)
                 freed += c.item.size_gb
                 ok += 1
-                self._console.print(
-                    f"  [green][{i}/{n}] deleted[/green]: " f"{(c.item.title or '')[:55]}  (+{c.item.size_gb} GB)"
-                )
+                self._console.print(f"  [green][{i}/{n}] deleted[/green]: " f"{(c.item.title or '')[:55]}  (+{c.item.size_gb} GB)")
             except Exception as e:
                 errors.append((c.item.title, str(e)))
                 self._console.print(f"  [red][{i}/{n}] FAILED[/red]: {(c.item.title or '')[:55]} — {e}")

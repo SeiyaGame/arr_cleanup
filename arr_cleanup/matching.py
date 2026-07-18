@@ -69,9 +69,7 @@ def build_resolver(
         settings=settings,
         section_type=section_type,
         # Built once and shared: it also spares Tautulli its per-item guid fetching.
-        catalog=(
-            _plex_catalog(settings, section_type, cache) if any(s.name == PlexSource.name for s in sources) else None
-        ),
+        catalog=(_plex_catalog(settings, section_type, cache) if any(s.name == PlexSource.name for s in sources) else None),
         cache=cache,
         progress_cb=progress_cb,
     )
