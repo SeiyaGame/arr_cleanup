@@ -9,6 +9,11 @@ python cleanup.py radarr                 # stats only, never deletes
 python cleanup.py sonarr --delete        # interactive deletion
 ```
 
+![A radarr run](docs/images/radarr.svg)
+
+The summary accounts for every item: what was excluded, what a filter preserved,
+and what no watch source could match. The table is only the leftovers.
+
 Connection settings live in `config.toml` (see `config.example.toml`).
 Filter criteria do not, they are passed on the command line.
 
@@ -37,10 +42,14 @@ Every filter also takes `enabled`, so `--set saga.enabled=false` skips it entire
 This table can drift; `python cleanup.py filters` cannot, since it reads the
 filters themselves. Trust it over this page.
 
+![The filters command](docs/images/filters.svg)
+
 ## Watch sources
 
 `python cleanup.py sources` lists them and says which are configured. Plex is
 strongly recommended. Skip one for a run with `--no-source plex` or `--no-source tautulli`.
+
+![The sources command](docs/images/sources.svg)
 
 ## Other commands
 
@@ -50,6 +59,16 @@ strongly recommended. Skip one for a run with `--no-source plex` or `--no-source
 | `filters`     | lists the filters and their options |
 | `sources`     | lists the watch sources             |
 | `cache-clear` | empties the API read cache          |
+
+Each *arr can be configured several times (films, 4k, anime...), every one of them is processed unless `--instance` or `--exclude` says otherwise.
+
+![The instances command](docs/images/instances.svg)
+
+## Run options
+
+`radarr` and `sonarr` take the same ones:
+
+![The radarr options](docs/images/radarr-help.svg)
 
 ## Deleting
 
@@ -62,3 +81,16 @@ since "never watched" cannot be distinguished from "never seen by any source".
 
 `--block-redownload` also adds an import exclusion, so the *arr will not grab
 the item again.
+
+## Captures
+
+The terminal captures above are generated, not screenshotted, so they can be
+rebuilt when the output changes:
+
+```bash
+python docs/capture.py            # all of them
+python docs/capture.py filters    # only the matching ones
+```
+
+They run against whatever `config.toml` points at, read-only. Hostnames are
+rewritten on the way out.
