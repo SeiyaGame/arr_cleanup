@@ -38,3 +38,13 @@ def test_register_rejects_a_missing_or_duplicate_name():
         @register
         class Clash(RadarrProvider):
             name = "radarr"
+
+
+def test_register_rejects_a_section_type_that_is_not_the_enum():
+    """A type checker lets a subclass attribute contradict the base annotation."""
+    with pytest.raises(ValueError, match="section_type"):
+
+        @register
+        class Stringly(RadarrProvider):
+            name = "stringly"
+            section_type = "movies"

@@ -8,6 +8,7 @@ import requests
 
 from ..cache import HttpCache
 from ..config import Settings
+from ..models import SectionType
 from .guids import normalize_guid, normalize_guids
 
 
@@ -28,7 +29,7 @@ class TautulliClient:
 
         return self._cache.get_or_fetch(url, params, fetch)
 
-    def resolve_section_ids(self, section_type: str) -> list[int]:
+    def resolve_section_ids(self, section_type: SectionType) -> list[int]:
         """Every section matching the type ('movie' / 'show').
 
         All of them, on purpose: a library is often split across several sections

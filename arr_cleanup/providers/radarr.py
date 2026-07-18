@@ -5,7 +5,7 @@ from __future__ import annotations
 from ..cache import HttpCache
 from ..clients.radarr import RadarrClient
 from ..config import ArrInstance
-from ..models import MediaItem, MediaKind
+from ..models import MediaItem, MediaKind, SectionType
 from .base import ArrProvider, register
 from .parsing import collection_key, parse_dt, rating_value
 
@@ -16,7 +16,7 @@ class RadarrProvider(ArrProvider):
     description = "Never-watched Radarr movies."
     noun = "movie"
     noun_plural = "movies"
-    section_type = "movie"
+    section_type = SectionType.MOVIE
 
     def __init__(self, instance: ArrInstance, cache: HttpCache | None = None):
         super().__init__(instance, cache)

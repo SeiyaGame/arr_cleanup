@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 
 from ..cache import HttpCache
 from ..config import Settings
-from ..models import MatchType, MediaItem, WatchInfo
+from ..models import MatchType, MediaItem, SectionType, WatchInfo
 
 if TYPE_CHECKING:
     from .plex import PlexCatalog
@@ -90,7 +90,7 @@ class SourceContext:
     """
 
     settings: Settings
-    section_type: str  # "movie" | "show"
+    section_type: SectionType
     catalog: PlexCatalog | None = None
     cache: HttpCache = field(default_factory=HttpCache.disabled)
     progress_cb: ProgressCb | None = None

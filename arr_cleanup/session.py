@@ -21,6 +21,7 @@ from .engine import CleanupEngine, CleanupResult
 from .export import write_csv
 from .filters import FilterConfig
 from .matching import WatchResolver, active_source_names, build_resolver
+from .models import SectionType
 from .providers.base import ArrProvider
 
 
@@ -74,7 +75,7 @@ class CleanupSession:
             Deleter(provider, self.console, self.cache).run(result.candidates, self.options.include_unmatched, self.options.block_redownload)
         return result
 
-    def _build_resolver(self, section_type: str) -> WatchResolver:
+    def _build_resolver(self, section_type: SectionType) -> WatchResolver:
         with Progress(
             TextColumn("[cyan]Metadata[/cyan]"),
             BarColumn(),

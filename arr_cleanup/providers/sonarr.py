@@ -5,7 +5,7 @@ from __future__ import annotations
 from ..cache import HttpCache
 from ..clients.sonarr import SonarrClient
 from ..config import ArrInstance
-from ..models import MediaItem, MediaKind
+from ..models import MediaItem, MediaKind, SectionType
 from .base import ArrProvider, register
 from .parsing import parse_dt, rating_value
 
@@ -16,7 +16,7 @@ class SonarrProvider(ArrProvider):
     description = "Never-watched Sonarr series (no episode watched)."
     noun = "series"
     noun_plural = "series"
-    section_type = "show"
+    section_type = SectionType.SHOW
 
     def __init__(self, instance: ArrInstance, cache: HttpCache | None = None):
         super().__init__(instance, cache)

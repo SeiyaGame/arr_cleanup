@@ -6,6 +6,7 @@ import requests
 
 from ..cache import HttpCache
 from ..config import Settings
+from ..models import SectionType
 
 
 class PlexClient:
@@ -40,7 +41,7 @@ class PlexClient:
     def sections(self) -> list[dict]:
         return self._get("/library/sections").get("Directory", [])
 
-    def section_ids(self, section_type: str) -> list[int]:
+    def section_ids(self, section_type: SectionType) -> list[int]:
         """Every section matching the type ('movie' / 'show')."""
         return [int(d["key"]) for d in self.sections() if d.get("type") == section_type and d.get("key") is not None]
 

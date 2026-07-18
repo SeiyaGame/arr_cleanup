@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 
 from ..cache import HttpCache
 from ..config import ArrInstance
-from ..models import MediaItem
+from ..models import MediaItem, SectionType
 
 
 class ArrProvider(ABC):
@@ -22,7 +22,7 @@ class ArrProvider(ABC):
     description: str = ""  # one-line help for the CLI subcommand
     noun: str = "media"  # singular label for messages
     noun_plural: str = "media"  # plural label
-    section_type: str = ""  # "movie" / "show" — same vocabulary in Plex and Tautulli
+    section_type: SectionType  # which Plex/Tautulli library holds this *arr's items
 
     def __init__(self, instance: ArrInstance, cache: HttpCache | None = None):
         self.instance = instance
@@ -48,10 +48,16 @@ def register(cls: type[ArrProvider]) -> type[ArrProvider]:
 
     `name` keys the config.toml section and the CLI subcommand, so a missing or
     duplicated one would silently shadow another *arr's instances.
+
+    `section_type` is checked here because a type checker will not: it verifies an
+    annotated assignment, but not that a subclass attribute matches the type the
+    base class declared.
     """
     if not cls.name:
         raise ValueError(f"Provider {cls.__name__} must define a non-empty `name`.")
     if clash := next((c for c in REGISTRY if c.name == cls.name), None):
         raise ValueError(f"Provider name '{cls.name}' is already used by {clash.__name__}.")
+    if not isinstance(getattr(cls, "section_type", None), SectionType):
+        raise ValueError(f"Provider {cls.__name__} must set `section_type` to a SectionType member.")
     REGISTRY.append(cls)
     return cls

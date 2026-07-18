@@ -16,6 +16,18 @@ class MediaKind(StrEnum):
     SERIES = "series"
 
 
+class SectionType(StrEnum):
+    """A Plex/Tautulli library type.
+
+    Their vocabulary, not ours: a series lives in a "show" section. Being a
+    StrEnum, members compare equal to the raw strings those APIs return, so it
+    can be sent straight to them.
+    """
+
+    MOVIE = "movie"
+    SHOW = "show"
+
+
 class MatchType(StrEnum):
     """How an item was linked to a watch-source entry.
 

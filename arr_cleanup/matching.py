@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from .cache import HttpCache
 from .clients.plex import PlexClient
 from .config import Settings
-from .models import MatchType, MediaItem, WatchInfo
+from .models import MatchType, MediaItem, SectionType, WatchInfo
 from .sources import REGISTRY, ProgressCb, SourceContext, WatchIndex
 from .sources.base import normalize_path, normalize_title  # noqa: F401  (re-exported)
 from .sources.plex import PlexCatalog, PlexSource, build_catalog
@@ -48,7 +48,7 @@ class WatchResolver:
 
 def build_resolver(
     settings: Settings,
-    section_type: str,
+    section_type: SectionType,
     cache: HttpCache | None = None,
     progress_cb: ProgressCb | None = None,
     disabled: tuple[str, ...] = (),
@@ -75,7 +75,7 @@ def build_resolver(
     return WatchResolver([source.build_index(ctx) for source in sources])
 
 
-def _plex_catalog(settings: Settings, section_type: str, cache: HttpCache) -> PlexCatalog:
+def _plex_catalog(settings: Settings, section_type: SectionType, cache: HttpCache) -> PlexCatalog:
     client = PlexClient(settings, cache)
     return build_catalog(client, client.section_ids(section_type))
 
