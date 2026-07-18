@@ -1,0 +1,15 @@
+# Secrets
+config.toml
+
+# Cache local
+.http_cache/
+.tautulli_guid_cache.json
+
+# Python / venv
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE
+.idea/

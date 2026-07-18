@@ -1,0 +1,31 @@
+[project]
+name = "arr-cleanup"
+version = "3.0.0"
+description = "Finds and deletes never-watched movies/series (Radarr/Sonarr cross-referenced with Tautulli)."
+requires-python = ">=3.12"
+dependencies = ["requests", "typer", "rich", "questionary"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures: dict(**base) stays more readable than a literal for the merge pattern.
+"tests/*" = ["C408"]
+
+[tool.black]
+line-length = 120
+target-version = ["py312"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ty.src]
+# Tests use dynamic fixtures (MediaItem(**base)) that are untypeable without TypedDict:
+# ruff + black still cover them, but we keep tests out of the type check.
+include = ["arr_cleanup"]
+exclude = ["venv", "tests"]

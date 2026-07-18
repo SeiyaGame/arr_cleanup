@@ -1,0 +1,50 @@
+# Copy this file to config.toml and fill in your values.
+# config.toml is gitignored (it contains secrets).
+#
+#
+# At least one watch source ([plex] and/or [tautulli]) is required.
+# Plex is strongly recommended: its history covers every user and predates Tautulli,
+# whereas Tautulli knows nothing about what happened before it was installed.
+
+# --- *arr instances ---
+# One [[radarr]] / [[sonarr]] block per server. A single block is fine; repeat it
+# when you run several (films, anime, 4k...). `name` is what --instance selects.
+[[radarr]]
+name = "films"
+url = "http://radarr.local:7878"
+api_key = "CHANGE_ME"
+
+[[radarr]]
+name = "anime"
+url = "http://radarr-anime.local:7878"
+api_key = "CHANGE_ME"
+
+[[sonarr]]
+name = "series"
+url = "http://sonarr.local:8989"
+api_key = "CHANGE_ME"
+
+# --- watch sources ---
+[plex]
+url = "http://plex.local:32400"
+token = "CHANGE_ME"  # X-Plex-Token
+# Every section of the type is scanned, which matters when a library is split
+# (Films / Films Anime / Films-4k) — all of them feed the same *arr.
+
+[tautulli]
+url = "http://tautulli.local:8181"
+api_key = "CHANGE_ME"
+
+[cache]
+# API reads are cached on disk, so repeated runs stop hammering the APIs.
+# --refresh ignores it, --no-cache disables it, `cleanup.py cache-clear` empties it.
+# --delete always refetches (deleting against a stale listing is not acceptable).
+enabled = true
+ttl_minutes = 60
+# dir = ".http_cache"
+
+[imdb]
+# Only used as a fallback when Plex is not configured: number of Tautulli
+# get_metadata calls run in parallel to resolve guids.
+fetch_workers = 16
+# cache_file = ".tautulli_guid_cache.json"
